@@ -1,10 +1,12 @@
-import {User} from '../module/User.model.js'
-import {ApiError} from "../utils/ApiError.js";
-import {ApiResponce} from "../utils/ApiResponce.js";
-import {asyncHandler} from "../utils/AsyncHandler.js";
-import {OTP} from "../module/SendOTP.module.js";
-import {generate} from "otp-generator";
+import { User } from '../module/User.model.js'
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponce } from "../utils/ApiResponce.js";
+import { asyncHandler } from "../utils/AsyncHandler.js";
+import { OTP } from "../module/SendOTP.module.js";
+import { generate } from "otp-generator";
 import jwt from "jsonwebtoken";
+import { ChackUp } from '../module/ChackUp.Module.js';
+import { model, generationConfig } from '../utils/Ai.module.js';
 
 //generate access and Refress token
 export const generateAccessAndRefereshTokens = async (userId) => {
@@ -14,19 +16,19 @@ export const generateAccessAndRefereshTokens = async (userId) => {
 		const refreshToken = user.genetareRefressToken()
 
 		user.refreshToken = refreshToken
-		await user.save({validateBeforeSave: false})
+		await user.save({ validateBeforeSave: false })
 
-		return {accessToken,refreshToken}
+		return { accessToken, refreshToken }
 
 
-	} catch(error) {
-		throw new ApiError(500,"Something went wrong while generating referesh and access token")
+	} catch (error) {
+		throw new ApiError(500, "Something went wrong while generating referesh and access token")
 	}
 }
 
 
 //sign up controller 
-export const registerUser = asyncHandler(async (req,res) => {
+export const registerUser = asyncHandler(async (req, res) => {
 	// get user details from frontend
 	// validation - not empty
 	// check if user already exists: username, email
@@ -35,21 +37,21 @@ export const registerUser = asyncHandler(async (req,res) => {
 	// check for user creation
 	// return res
 
-	const {userName,email,password,accountType} = req.body
+	const { userName, email, password, accountType } = req.body
 
 
-	if(
-		[userName,email,password,accountType].some((field) => field?.trim() === "")
+	if (
+		[userName, email, password, accountType].some((field) => field?.trim() === "")
 	) {
-		throw new ApiError(400,"All fields are required")
+		throw new ApiError(400, "All fields are required")
 	}
 
 
-	const existedUser = await User.findOne({$and: [{email: email},{validUser: true}]})
-	if(existedUser) {
-		throw new ApiError(400,"User with email  already exists")
+	const existedUser = await User.findOne({ $and: [{ email: email }, { validUser: true }] })
+	if (existedUser) {
+		throw new ApiError(400, "User with email  already exists")
 	}
-	
+
 	//to generate otp ..
 
 	const generateOTP = generate(6,
@@ -65,17 +67,17 @@ export const registerUser = asyncHandler(async (req,res) => {
 		Otp: generateOTP,
 	})
 
-	if(!SaveOtp) {
-		throw new ApiError(500,"Something went wrong to sending otp")
+	if (!SaveOtp) {
+		throw new ApiError(500, "Something went wrong to sending otp")
 	}
 
 	const existedUserUpdate = await User.findOne({
-		$and: [{email: email},{validUser: false}]
+		$and: [{ email: email }, { validUser: false }]
 	})
 
-	if(existedUserUpdate) {
+	if (existedUserUpdate) {
 		return res.status(200).json(
-			new ApiResponce(200,existedUserUpdate,"User registered Successfully")
+			new ApiResponce(200, existedUserUpdate, "User registered Successfully")
 		)
 
 	}
@@ -93,42 +95,42 @@ export const registerUser = asyncHandler(async (req,res) => {
 		"-password -refreshToken"
 	)
 
-	if(!createdUser) {
-		throw new ApiError(500,"Something went wrong while registering the user")
+	if (!createdUser) {
+		throw new ApiError(500, "Something went wrong while registering the user")
 	}
 
 	return res.status(201).json(
-		new ApiResponce(200,createdUser,"User registered Successfully")
+		new ApiResponce(200, createdUser, "User registered Successfully")
 	)
 
 })
 
 // otp match controller
-export const OTPmatchController = asyncHandler(async (req,res) => {
-	const {Otp,email} = req.body;
+export const OTPmatchController = asyncHandler(async (req, res) => {
+	const { Otp, email } = req.body;
 
-	const ChackOTP = await OTP.find({email: email}).sort({createdAt: -1}).limit(1);
-	if(ChackOTP[0].Otp != Otp) {
-		throw new ApiError(400,"invalid OTP")
+	const ChackOTP = await OTP.find({ email: email }).sort({ createdAt: -1 }).limit(1);
+	if (ChackOTP[0].Otp != Otp) {
+		throw new ApiError(400, "invalid OTP")
 	}
 
-	const ApproveAuthenticUser = await User.findOneAndUpdate({email},{
+	const ApproveAuthenticUser = await User.findOneAndUpdate({ email }, {
 		validUser: true
-	},{new: true})
+	}, { new: true })
 
-	if(!ApproveAuthenticUser) {
-		throw new ApiError(500,"Something went wrong to update data")
+	if (!ApproveAuthenticUser) {
+		throw new ApiError(500, "Something went wrong to update data")
 	}
 
 	return res.status(200).json(
-		new ApiResponce(200,ApproveAuthenticUser,"success fully update user Authentication")
+		new ApiResponce(200, ApproveAuthenticUser, "success fully update user Authentication")
 	)
 })
 
 
 //Login controller
 
-export const loginUser = asyncHandler(async (req,res) => {
+export const loginUser = asyncHandler(async (req, res) => {
 	// req body -> data
 	// username or email
 	//find the user
@@ -136,29 +138,29 @@ export const loginUser = asyncHandler(async (req,res) => {
 	//access and referesh token
 	//send cookie
 
-	const {email,password} = req.body
+	const { email, password } = req.body
 
 
-	if(!email) {
-		throw new ApiError(400,"username or email is required")
+	if (!email) {
+		throw new ApiError(400, "username or email is required")
 	}
 
 
 	const user = await User.findOne({
-		$and: [{email: email},{validUser: true}]
+		$and: [{ email: email }, { validUser: true }]
 	})
 
-	if(!user) {
-		throw new ApiError(404,"User does not exist")
+	if (!user) {
+		throw new ApiError(404, "User does not exist")
 	}
 
 	const isPasswordValid = await user.isPasswordCorrect(password)
 
-	if(!isPasswordValid) {
-		throw new ApiError(401,"Invalid user credentials")
+	if (!isPasswordValid) {
+		throw new ApiError(401, "Invalid user credentials")
 	}
 
-	const {accessToken,refreshToken} = await generateAccessAndRefereshTokens(user._id)
+	const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id)
 
 	const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
@@ -169,13 +171,13 @@ export const loginUser = asyncHandler(async (req,res) => {
 
 	return res
 		.status(200)
-		.cookie("accessToken",accessToken,options)
-		.cookie("refreshToken",refreshToken,options)
+		.cookie("accessToken", accessToken, options)
+		.cookie("refreshToken", refreshToken, options)
 		.json(
 			new ApiResponce(
 				200,
 				{
-					user: loggedInUser,accessToken,refreshToken
+					user: loggedInUser, accessToken, refreshToken
 				},
 				"User logged In Successfully"
 			)
@@ -184,7 +186,7 @@ export const loginUser = asyncHandler(async (req,res) => {
 })
 
 //log out controller
-export const logoutUser = asyncHandler(async (req,res) => {
+export const logoutUser = asyncHandler(async (req, res) => {
 	await User.findByIdAndUpdate(
 		req.user._id,
 		{
@@ -204,39 +206,39 @@ export const logoutUser = asyncHandler(async (req,res) => {
 
 	return res
 		.status(200)
-		.clearCookie("accessToken",options)
-		.clearCookie("refreshToken",options)
-		.json(new ApiResponce(200,{},"User logged Out"))
+		.clearCookie("accessToken", options)
+		.clearCookie("refreshToken", options)
+		.json(new ApiResponce(200, {}, "User logged Out"))
 })
 
 
 //change Password 
-export const changeCurrentPassword = asyncHandler(async (req,res) => {
-	const {oldPassword,newPassword} = req.body
+export const changeCurrentPassword = asyncHandler(async (req, res) => {
+	const { oldPassword, newPassword } = req.body
 
 
 	const user = await User.findById(req.user?._id)
 	const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
 
-	if(!isPasswordCorrect) {
-		throw new ApiError(400,"Invalid old password")
+	if (!isPasswordCorrect) {
+		throw new ApiError(400, "Invalid old password")
 	}
 
 	user.password = newPassword
-	await user.save({validateBeforeSave: false})
+	await user.save({ validateBeforeSave: false })
 
 	return res
 		.status(200)
-		.json(new ApiResponce(200,{},"Password changed successfully"))
+		.json(new ApiResponce(200, {}, "Password changed successfully"))
 })
 
 
 //generate refress token
-export const refreshAccessToken = asyncHandler(async (req,res) => {
+export const refreshAccessToken = asyncHandler(async (req, res) => {
 	const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
-	if(!incomingRefreshToken) {
-		throw new ApiError(401,"unauthorized request")
+	if (!incomingRefreshToken) {
+		throw new ApiError(401, "unauthorized request")
 	}
 
 	try {
@@ -247,12 +249,12 @@ export const refreshAccessToken = asyncHandler(async (req,res) => {
 
 		const user = await User.findById(decodedToken?._id)
 
-		if(!user) {
-			throw new ApiError(401,"Invalid refresh token")
+		if (!user) {
+			throw new ApiError(401, "Invalid refresh token")
 		}
 
-		if(incomingRefreshToken !== user?.refreshToken) {
-			throw new ApiError(401,"Refresh token is expired or used")
+		if (incomingRefreshToken !== user?.refreshToken) {
+			throw new ApiError(401, "Refresh token is expired or used")
 
 		}
 
@@ -261,22 +263,77 @@ export const refreshAccessToken = asyncHandler(async (req,res) => {
 			secure: true
 		}
 
-		const {accessToken,newRefreshToken} = await generateAccessAndRefereshTokens(user._id)
+		const { accessToken, newRefreshToken } = await generateAccessAndRefereshTokens(user._id)
 
 		return res
 			.status(200)
-			.cookie("accessToken",accessToken,options)
-			.cookie("refreshToken",newRefreshToken,options)
+			.cookie("accessToken", accessToken, options)
+			.cookie("refreshToken", newRefreshToken, options)
 			.json(
 				new ApiResponce(
 					200,
-					{accessToken,refreshToken: newRefreshToken},
+					{ accessToken, refreshToken: newRefreshToken },
 					"Access token refreshed"
 				)
 			)
-	} catch(error) {
-		throw new ApiError(401,error?.message || "Invalid refresh token")
+	} catch (error) {
+		throw new ApiError(401, error?.message || "Invalid refresh token")
 	}
 
 })
+
+
+
+// find result 
+
+
+export const PredictionControler = asyncHandler(async (req, res) => {
+	// gat Prompt for fontend and user id
+	// chack user id 
+	// send request for ai
+	// // then return result
+	const { Id, Prompt } = req.body;
+
+
+	if (
+		[Id, Prompt].some((field) => field?.trim() === "")
+	) {
+		throw new ApiError(400, "All fields are required")
+	}
+
+	const existedUser = await User.findById(Id)
+	if (!existedUser) {
+		throw new ApiError(400, "cannot find user")
+	}
+	
+
+	const chatSession = model.startChat({
+		generationConfig,
+		history: [],
+	});
+
+	const GeminiJsonREsult = await chatSession.sendMessage(Prompt);
+	const Result = GeminiJsonREsult.response.text() 
+
+
+	if (!Result) {
+		throw new ApiError(400, "sumthing is wrong in ai module")
+	}
+	
+	const StoreUserDibeticeResult = await ChackUp.create(
+		{
+			UserID: existedUser._id,
+			Result: Result
+		}
+	)
+	console.log("userID: ", existedUser, "Model Result :" ,Result);
+	return res.status(201).json(
+		new ApiResponce(200, Result, "User result success fully collect")
+	)
+
+
+})
+
+
+
 

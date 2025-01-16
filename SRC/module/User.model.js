@@ -27,7 +27,7 @@ const UserSchema = new Schema({
 	},
 	accountType: {
 		type: String,
-		required: ["admin","customer"],
+		required: ["admin","client"],
 		trim: true,
 		lowecase: true
 	},

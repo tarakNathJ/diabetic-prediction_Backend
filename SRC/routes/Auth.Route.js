@@ -6,7 +6,8 @@ import {
 	changeCurrentPassword,
 	refreshAccessToken,
 
-	OTPmatchController
+	OTPmatchController,
+	PredictionControler
 } from "../controller/Auth.controller.js";
 import {verifyJWT} from "../middleware/Auth.MiddleWare.js";
 
@@ -19,6 +20,7 @@ routes.route("/logOut").post(verifyJWT,logoutUser);
 routes.route("/changePassword").post(verifyJWT,changeCurrentPassword);
 routes.route("/refreshToken").post(refreshAccessToken);
 routes.route("/OTP").post(OTPmatchController);
+routes.route("/Prediction").post(PredictionControler)
 
 
 

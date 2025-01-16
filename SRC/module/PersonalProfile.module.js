@@ -11,14 +11,6 @@ const PersonalProfileSchema = new Schema({
         type: String,
         maxLength: 80,
         lowecase: true
-    },
-    paymentDetailsID: {
-        type: Schema.Types.ObjectId,
-        ref: "paymentDetails"
-    },
-    accountDetailsID: {
-        type: Schema.Types.ObjectId,
-        ref: "accountDetails"
     }
 }, { timestamps: true })
 

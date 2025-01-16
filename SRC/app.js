@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import routes from './routes/Auth.Route.js';
-import productRoutes from './routes/Product.Route.js';
+// import route from './routes/AI.Module.Roter.js';
 
 
 const app = express();
@@ -25,6 +25,6 @@ app.use(cookieParser());
 
 
 app.use("/Api/V1",routes);
-app.use("/Api/V1",productRoutes);
+// app.use("/Api/V1",route);
 
 export { app }
