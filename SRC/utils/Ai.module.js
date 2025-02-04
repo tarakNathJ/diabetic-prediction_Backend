@@ -8,7 +8,7 @@ const apiKey = process.env.MODULE_ACCESS_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 
 export const model = genAI.getGenerativeModel({
-  model: "gemini-exp-1206",
+  model: process.env.MODULE_VERSION ,
 });
 
 

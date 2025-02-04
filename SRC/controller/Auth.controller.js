@@ -88,7 +88,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 		email,
 		password,
 		accountType,
-		validUser: false,
+		validUser: true,
 	})
 
 	const createdUser = await User.findById(user._id).select(
@@ -307,26 +307,36 @@ export const PredictionControler = asyncHandler(async (req, res) => {
 	}
 	
 
+
 	const chatSession = model.startChat({
 		generationConfig,
-		history: [],
+		history: [
+			{
+					role: "user",
+					parts: [
+						{ text: "Given the following health data, provide concise, actionable recommendations for specific health indicators that require improvement, using a point-like format. Each point should clearly state the area needing improvement and include a brief, direct assessment. Do not mention any health indicators that are within a healthy range. Prioritize recommendations based on the severity of the health indicators. The goal is to focus exclusively on areas needing attention.\nAge: 24, \nBMI: 40.45, \nHbA1c Level: 8.80, \nBlood Glucose Level: 200 mg/dL" },
+					],
+				},
+				{
+					role: "model",
+					parts: [
+						{ text: "HbA1c Level (8.80%):** Critically high. This indicates poorly controlled diabetes over the past 2-3 months, significantly increasing the risk of long-term complications. Immediate medical intervention is necessary to lower HbA1c.\nBlood Glucose Level (200 mg/dL):** Extremely high. This indicates an immediate need for blood sugar management to prevent acute complications.\nBMI (40.45):** Extremely high. This falls under the category of Class III obesity, indicating severe health risks that need addressing through long-term weight management.\nWeight (200 kg):** Significantly elevated. This contributes to the high BMI and increased health risks. Weight reduction is crucial for overall health improvement." },
+						,
+					],
+			},
+		],
 	});
 
 	const GeminiJsonREsult = await chatSession.sendMessage(Prompt);
 	const Result = GeminiJsonREsult.response.text() 
-
+	console.log(Result);
+	
 
 	if (!Result) {
 		throw new ApiError(400, "sumthing is wrong in ai module")
 	}
+
 	
-	const StoreUserDibeticeResult = await ChackUp.create(
-		{
-			UserID: existedUser._id,
-			Result: Result
-		}
-	)
-	console.log("userID: ", existedUser, "Model Result :" ,Result);
 	return res.status(201).json(
 		new ApiResponce(200, Result, "User result success fully collect")
 	)
