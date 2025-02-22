@@ -2,8 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import routes from './routes/Auth.Route.js';
-// import route from './routes/AI.Module.Roter.js';
-
+import MonitorRoutes from './routes/Motor.Route.js';
+import { MiddleWareForMonitering } from './middleware/RequestMonitering.middleWare.js';
 
 const app = express();
 
@@ -22,9 +22,9 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 
 app.use(express.static('public'))
 app.use(cookieParser());
-
+app.use(MiddleWareForMonitering)
 
 app.use("/Api/V1",routes);
-// app.use("/Api/V1",route);
+app.use("/Chacking/Api",MonitorRoutes);
 
 export { app }

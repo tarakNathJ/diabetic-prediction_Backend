@@ -6,7 +6,8 @@ import { OTP } from "../module/SendOTP.module.js";
 import { generate } from "otp-generator";
 import jwt from "jsonwebtoken";
 import { ChackUp } from '../module/ChackUp.Module.js';
-import { model, generationConfig } from '../utils/Ai.module.js';
+import { RPC } from '../utils/RPC.js';
+
 
 //generate access and Refress token
 export const generateAccessAndRefereshTokens = async (userId) => {
@@ -214,10 +215,10 @@ export const logoutUser = asyncHandler(async (req, res) => {
 
 //change Password 
 export const changeCurrentPassword = asyncHandler(async (req, res) => {
-	const { oldPassword, newPassword } = req.body
+	const { email, oldPassword, newPassword } = req.body
 
 
-	const user = await User.findById(req.user?._id)
+	const user = await User.findOne({ email: email })
 	const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
 
 	if (!isPasswordCorrect) {
@@ -284,66 +285,43 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 
 
 
-// find result 
-
-
-export const PredictionControler = asyncHandler(async (req, res) => {
-	// gat Prompt for fontend and user id
-	// chack user id 
-	// send request for ai
-	// // then return result
-	const { Id, Prompt } = req.body;
-
-
+export const DiabeticPredictionCall = asyncHandler(async (req, res) => {
+	const { ID, age, hypertension, heart_disease, bmi, HbA1c_level, blood_glucose_level } = req.body;
 	if (
-		[Id, Prompt].some((field) => field?.trim() === "")
+		!ID || !age || !bmi || !HbA1c_level || !blood_glucose_level || !hypertension || !heart_disease
 	) {
 		throw new ApiError(400, "All fields are required")
 	}
+	let heartdisease = heart_disease == "yes" ? 1 : 0;
+	let hypertension_ = hypertension == "yes" ? 1 : 0;
 
-	const existedUser = await User.findById(Id)
-	if (!existedUser) {
-		throw new ApiError(400, "cannot find user")
-	}
-	
-
-
-	const chatSession = model.startChat({
-		generationConfig,
-		history: [
-			{
-					role: "user",
-					parts: [
-						{ text: "Given the following health data, provide concise, actionable recommendations for specific health indicators that require improvement, using a point-like format. Each point should clearly state the area needing improvement and include a brief, direct assessment. Do not mention any health indicators that are within a healthy range. Prioritize recommendations based on the severity of the health indicators. The goal is to focus exclusively on areas needing attention.\nAge: 24, \nBMI: 40.45, \nHbA1c Level: 8.80, \nBlood Glucose Level: 200 mg/dL" },
-					],
-				},
-				{
-					role: "model",
-					parts: [
-						{ text: "HbA1c Level (8.80%):** Critically high. This indicates poorly controlled diabetes over the past 2-3 months, significantly increasing the risk of long-term complications. Immediate medical intervention is necessary to lower HbA1c.\nBlood Glucose Level (200 mg/dL):** Extremely high. This indicates an immediate need for blood sugar management to prevent acute complications.\nBMI (40.45):** Extremely high. This falls under the category of Class III obesity, indicating severe health risks that need addressing through long-term weight management.\nWeight (200 kg):** Significantly elevated. This contributes to the high BMI and increased health risks. Weight reduction is crucial for overall health improvement." },
-						,
-					],
-			},
-		],
-	});
-
-	const GeminiJsonREsult = await chatSession.sendMessage(Prompt);
-	const Result = GeminiJsonREsult.response.text() 
-	console.log(Result);
-	
-
-	if (!Result) {
-		throw new ApiError(400, "sumthing is wrong in ai module")
+	const ResultDate = await RPC(age, hypertension_, heartdisease, bmi, HbA1c_level, blood_glucose_level);
+	if (!ResultDate) {
+		throw new ApiError(400, "RPC Request cancel")
 	}
 
-	
-	return res.status(201).json(
-		new ApiResponce(200, Result, "User result success fully collect")
-	)
+	const StoreUserResult = await ChackUp.create({
+		UserID: ID,
+		XgBoost: ResultDate.xgboost,
+		Randomforest: ResultDate.random_forest,
+		age: age,
+		bmi: bmi,
+		Hba1c: HbA1c_level,
+		blood_glucose_level: blood_glucose_level,
+		hypertension: hypertension_,
+		heart_disease: heartdisease
+
+	})
+	if (!StoreUserResult) {
+		throw new ApiError(401, " user prediction result store fall ")
+	}
+
+
+	return res.status(200).json(new ApiResponce(
+		200,
+		{ StoreUserResult },
+		"got it"
+	))
 
 
 })
-
-
-
-
