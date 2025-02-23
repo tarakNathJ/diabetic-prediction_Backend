@@ -38,7 +38,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 	// check for user creation
 	// return res
 
-	const { userName, email, password, accountType } = req.body
+	const { userName, email, password, accountType = "client" } = req.body
 
 
 	if (
@@ -62,15 +62,15 @@ export const registerUser = asyncHandler(async (req, res) => {
 			lowerCaseAlphabets: false
 		});
 
-	//save and send OTP 
-	const SaveOtp = await OTP.create({
-		email,
-		Otp: generateOTP,
-	})
+	// //save and send OTP 
+	// const SaveOtp = await OTP.create({
+	// 	email,
+	// 	Otp: generateOTP,
+	// })
 
-	if (!SaveOtp) {
-		throw new ApiError(500, "Something went wrong to sending otp")
-	}
+	// if (!SaveOtp) {
+	// 	throw new ApiError(500, "Something went wrong to sending otp")
+	// }
 
 	const existedUserUpdate = await User.findOne({
 		$and: [{ email: email }, { validUser: false }]
@@ -295,13 +295,18 @@ export const DiabeticPredictionCall = asyncHandler(async (req, res) => {
 	let heartdisease = heart_disease == "yes" ? 1 : 0;
 	let hypertension_ = hypertension == "yes" ? 1 : 0;
 
+	const ChackUserExit = await User.findById({_id:ID});
+	if(!ChackUserExit){
+		throw new ApiError(400 ,"user are not exit");
+	}
+
 	const ResultDate = await RPC(age, hypertension_, heartdisease, bmi, HbA1c_level, blood_glucose_level);
 	if (!ResultDate) {
 		throw new ApiError(400, "RPC Request cancel")
 	}
 
 	const StoreUserResult = await ChackUp.create({
-		UserID: ID,
+		UserID: ChackUserExit._id,
 		XgBoost: ResultDate.xgboost,
 		Randomforest: ResultDate.random_forest,
 		age: age,
@@ -320,7 +325,7 @@ export const DiabeticPredictionCall = asyncHandler(async (req, res) => {
 	return res.status(200).json(new ApiResponce(
 		200,
 		{ StoreUserResult },
-		"got it"
+		"user diabetic Prediction result "
 	))
 
 
