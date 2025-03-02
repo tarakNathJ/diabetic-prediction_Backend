@@ -16,7 +16,7 @@ export const MailSender = async(email, title, body) => {
 
         const info = await transporter.sendMail({
 
-            from: `NGO`,
+            from: `diabetic`,
             to: `${email}`,
             subject: title,
             html: `${body}`,

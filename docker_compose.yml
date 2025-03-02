@@ -1,0 +1,54 @@
+
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - monitoring
+    volumes:
+      - mongodb_data:/data/db
+
+  backend22:
+    image: diabetic_prediction_nodejs_backend
+    container_name: backend_app
+    depends_on:
+      - mongodb
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+    environment:
+      DATABADE_URL: "mongodb://mongodb:27017/"
+      API_URL:  "http://localhost:5040/prediction"
+      ACCESS_TOKEN_EXPAIRY : "1d"
+      ENV ACCESS_TOKEN_SECRET : 3ODkwIiwibmFtZSI6Ikpva
+      ENV REFRESH_TOKEN_SECRET : GIjoxNTE2MjM5MDIyfQ
+      ENV REFRESH_TOKEN_EXPAIRY : "10d"
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./:/etc/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    networks:
+      - monitoring
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+networks:
+  monitoring:
+
+volumes:
+  mongodb_data:

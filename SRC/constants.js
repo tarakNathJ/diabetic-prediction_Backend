@@ -1,1 +1,1 @@
-export const DB_Name = "Dibetice"
+export const DB_Name = "DibeticePrediction"

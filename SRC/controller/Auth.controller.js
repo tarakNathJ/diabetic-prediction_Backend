@@ -330,3 +330,22 @@ export const DiabeticPredictionCall = asyncHandler(async (req, res) => {
 
 
 })
+
+export const ShowAllResult  = asyncHandler (async(req ,res)=>{
+	const Id = req.body.ID;
+	const FindUser = await User.findById({_id:Id});
+	if(!FindUser){
+		throw new ApiError(400, "user are not present");
+	}
+	const FindUserProviousResult = await ChackUp.find({UserID:FindUser._id})
+	if(!FindUserProviousResult){
+		throw new ApiError(400, "user result are not present ");
+
+	}
+
+	return res.status(200).json(new ApiResponce(
+		200,
+		{ FindUserProviousResult },
+		"User All Provious result"
+	))
+})
