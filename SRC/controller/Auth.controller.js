@@ -40,6 +40,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 
 	const { userName, email, password, accountType = "client" } = req.body
 
+	console.log(userName, " : ", email, " : ", password, " : ", accountType);
 
 	if (
 		[userName, email, password, accountType].some((field) => field?.trim() === "")
@@ -287,6 +288,8 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 
 export const DiabeticPredictionCall = asyncHandler(async (req, res) => {
 	const { ID, age, hypertension, heart_disease, bmi, HbA1c_level, blood_glucose_level } = req.body;
+	
+
 	if (
 		!ID || !age || !bmi || !HbA1c_level || !blood_glucose_level || !hypertension || !heart_disease
 	) {
@@ -304,13 +307,14 @@ export const DiabeticPredictionCall = asyncHandler(async (req, res) => {
 	if (!ResultDate) {
 		throw new ApiError(400, "RPC Request cancel")
 	}
+	let UpdatedBmi = parseFloat(bmi.toFixed(2));
 
 	const StoreUserResult = await ChackUp.create({
 		UserID: ChackUserExit._id,
 		XgBoost: ResultDate.xgboost,
 		Randomforest: ResultDate.random_forest,
 		age: age,
-		bmi: bmi,
+		bmi: UpdatedBmi,
 		Hba1c: HbA1c_level,
 		blood_glucose_level: blood_glucose_level,
 		hypertension: hypertension_,

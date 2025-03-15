@@ -11,23 +11,26 @@ services:
       - monitoring
     volumes:
       - mongodb_data:/data/db
+    restart: always
 
   backend22:
-    image: diabetic_prediction_nodejs_backend
+    image: taraknathjana09/backend_app_diabetic_prediction:v1.2
     container_name: backend_app
     depends_on:
       - mongodb
     ports:
-      - "3000:3000"
+      - "443:3000"
     networks:
       - monitoring
     environment:
       DATABADE_URL: "mongodb://mongodb:27017/"
-      API_URL:  "http://localhost:5040/prediction"
+      API_URL:  "http://ml_backend.taraknathjana.com/predict"
       ACCESS_TOKEN_EXPAIRY : "1d"
-      ENV ACCESS_TOKEN_SECRET : 3ODkwIiwibmFtZSI6Ikpva
-      ENV REFRESH_TOKEN_SECRET : GIjoxNTE2MjM5MDIyfQ
+      ENV ACCESS_TOKEN_SECRET : 3ODkwIiwibmFtZSIkwIiwibmFtZSI6Ikpva
+      ENV REFRESH_TOKEN_SECRET : GIjoxNTkwIiwibmFtZSIE2MjM5MDIyfQ
       ENV REFRESH_TOKEN_EXPAIRY : "10d"
+      ENV CROSE_ORIGIN : "https://diabetic-prediction-fontend.vercel.app"
+    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:latest
@@ -37,16 +40,19 @@ services:
       - "9090:9090"
     networks:
       - monitoring
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3001:3000"
+      - "80:3000"
     networks:
       - monitoring
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    restart: always
 
+  
 networks:
   monitoring:
 
