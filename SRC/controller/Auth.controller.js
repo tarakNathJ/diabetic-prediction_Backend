@@ -7,7 +7,8 @@ import { generate } from "otp-generator";
 import jwt from "jsonwebtoken";
 import { ChackUp } from '../module/ChackUp.Module.js';
 import { RPC } from '../utils/RPC.js';
-
+import { model } from '../utils/Gemini.js';
+import { generationConfig } from '../utils/Gemini.js';
 
 //generate access and Refress token
 export const generateAccessAndRefereshTokens = async (userId) => {
@@ -352,4 +353,98 @@ export const ShowAllResult  = asyncHandler (async(req ,res)=>{
 		{ FindUserProviousResult },
 		"User All Provious result"
 	))
+})
+
+
+export const DiabeticPredictionCall_Gemini_Model= asyncHandler(async(req ,res)=>{
+
+	const { ID, age, hypertension, heart_disease, bmi, HbA1c_level, blood_glucose_level } = req.body;
+	
+
+	if (
+		!ID || !age || !bmi || !HbA1c_level || !blood_glucose_level || !hypertension || !heart_disease
+	) {
+		throw new ApiError(400, "All fields are required")
+	}
+	let heartdisease = heart_disease == "yes" ? 1 : 0;
+	let hypertension_ = hypertension == "yes" ? 1 : 0;
+
+	const ChackUserExit = await User.findById({_id:ID});
+	if(!ChackUserExit){
+		throw new ApiError(400 ,"user are not exit");
+	}
+
+	const HealthData = {};
+	HealthData["age"] = age;
+	HealthData["hypertension"] = hypertension_;
+	HealthData["heart_disease"] = heartdisease;
+	HealthData["bmi"] = bmi;
+	HealthData["HbA1c_level"] = HbA1c_level;
+	HealthData["blood_glucose_level"] = blood_glucose_level;
+
+	const healthDataString = JSON.stringify(HealthData);
+
+	const chatSession = model.startChat({
+		generationConfig,
+		history: [
+			{
+				role: "user",
+				parts: [
+					{ text: "Based on the following health information, provide a single float number between 1 and 100 representing the likelihood of this patient developing diabetes. Higher numbers indicate a higher risk, lower numbers indicate a lower risk. ONLY return the numerical value.\n{\n \"age\":24,\n \"hypertension\":1,\n \"heart_disease\":0,\n \"bmi\":20.45,\n \"HbA1c_level\":6.80,\n \"blood_glucose_level\":98\n}" },
+				],
+			},
+			{
+				role: "model",
+				parts: [
+					{ text: "78.0\n" },
+				],
+			},
+			{
+				role: "user",
+				parts: [
+					{ text: "{\n \"age\": 24,\n \"hypertension\": 1,\n \"heart_disease\": 0,\n \"bmi\": 25.45,\n \"HbA1c_level\": 7.80,\n \"blood_glucose_level\": 118\n}" },
+				],
+			},
+			{
+				role: "model",
+				parts: [
+					{ text: "86.0\n" },
+				],
+			},
+		],
+	});
+
+	const result = await chatSession.sendMessage(`{\n ${healthDataString.slice(1,healthDataString.length - 1)}\n}`);
+	const responseText = result.response.text();
+	const predictedValue = parseFloat(responseText);
+	if (isNaN(predictedValue)) {
+		return res.status(500).json({ error: "Invalid response from the model." });
+	}
+
+	let UpdatedBmi = parseFloat(bmi.toFixed(2));
+
+	const StoreUserResult = await ChackUp.create({
+		UserID: ChackUserExit._id,
+		XgBoost: `${predictedValue} %`,
+		Randomforest: `${predictedValue} %`,
+		age: age,
+		bmi: UpdatedBmi,
+		Hba1c: HbA1c_level,
+		blood_glucose_level: blood_glucose_level,
+		hypertension: hypertension_,
+		heart_disease: heartdisease
+
+	})
+	if (!StoreUserResult) {
+		throw new ApiError(401, " user prediction result store fall ")
+	}
+
+
+	return res.status(200).json(new ApiResponce(
+		200,
+		{ StoreUserResult },
+		"user diabetic Prediction result "
+	))
+
+
 })

@@ -13,7 +13,9 @@ export const RPC = async (age,hypertension,heart_disease,bmi,HbA1c_level,blood_g
             blood_glucose_level:blood_glucose_level
         },{
             headers:{
-                "Content-Type":"application/json"
+                "Content-Type":"application/json",
+                "Content-Encoding":"br",
+                "Connection":"keep-alive"      
             }
         })
         console.log(Responce.data);

@@ -8,9 +8,12 @@ import {
 
 	OTPmatchController,
 	DiabeticPredictionCall,
-	ShowAllResult 
+	ShowAllResult ,
+	DiabeticPredictionCall_Gemini_Model
+	
 } from "../controller/Auth.controller.js";
 import {verifyJWT} from "../middleware/Auth.MiddleWare.js";
+
 
 
 const routes = Router();
@@ -23,7 +26,7 @@ routes.route("/refreshToken").post(refreshAccessToken);
 routes.route("/OTP").post(OTPmatchController);
 routes.route("/predict").post(DiabeticPredictionCall);
 routes.route("/AllResult").post(ShowAllResult);
-
+routes.route("/Predict_With_Gemini").post(DiabeticPredictionCall_Gemini_Model);
 
 
 export default routes;
