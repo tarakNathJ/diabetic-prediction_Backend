@@ -425,8 +425,8 @@ export const DiabeticPredictionCall_Gemini_Model= asyncHandler(async(req ,res)=>
 
 	const StoreUserResult = await ChackUp.create({
 		UserID: ChackUserExit._id,
-		XgBoost: `${predictedValue} %`,
-		Randomforest: `${predictedValue} %`,
+		XgBoost: `${predictedValue}`,
+		Randomforest: `${predictedValue}`,
 		age: age,
 		bmi: UpdatedBmi,
 		Hba1c: HbA1c_level,
